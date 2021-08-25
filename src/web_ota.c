@@ -24,13 +24,13 @@ static EventGroupHandle_t s_wifi_event_group;
 void wifi_init()
 {
     // Initialize NVS - needed for WIFI
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
     { // if no memory in NVS
         ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
+        err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK(err);
 
     // Initialize the underlying TCP/IP stack
     ESP_ERROR_CHECK(esp_netif_init());
@@ -104,8 +104,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-bool connect_to_sta(char *SSID, char *pass)
+bool connect_to_sta(credential data)
 {
+    char *SSID = data.ssid;
+    char *pass = data.password;
     s_wifi_event_group = xEventGroupCreate();
     bool toReturn;
 
@@ -230,4 +232,110 @@ void print_auth_mode(int authmode)
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
         break;
     }
+}
+
+credential *read_wifi_data()
+{
+    //Opening Non-Volatile Storage (NVS) handle
+    nvs_handle_t my_handle;
+    esp_err_t err;
+    credential *credentialData = malloc(sizeof(credential));
+
+    err = nvs_open("storage", NVS_READWRITE, &my_handle);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    }
+    else
+    {
+        //Reading data from NVS
+        size_t required_size;
+        nvs_get_str(my_handle, "credentialSsid", NULL, &required_size);
+        char *tmpStrSsid = malloc(required_size);
+        err = nvs_get_str(my_handle, "credentialSsid", tmpStrSsid, &required_size);
+
+        nvs_get_str(my_handle, "credentialPass", NULL, &required_size);
+        char *tmpStrPass = malloc(required_size);
+        err = nvs_get_str(my_handle, "credentialPass", tmpStrPass, &required_size);
+
+        switch (err)
+        {
+        case ESP_OK:
+            credentialData->ssid = tmpStrSsid;
+            credentialData->password = tmpStrPass;
+            break;
+        case ESP_ERR_NVS_NOT_FOUND:
+            ESP_LOGI("NVS", "The value is not initialized yet!\n");
+            free(tmpStrSsid);
+            free(tmpStrPass);
+            free(tmpStrSsid);
+            nvs_close(my_handle);
+            return NULL;
+            break;
+        default:
+            ESP_LOGI("NVS", "Error (%s) reading!(%d)\n", esp_err_to_name(err), required_size);
+            free(tmpStrSsid);
+            free(tmpStrPass);
+            free(tmpStrSsid);
+            nvs_close(my_handle);
+            return NULL;
+        }
+
+        // Close
+        nvs_close(my_handle);
+    }
+    return credentialData;
+}
+
+void free_credential(credential *data)
+{
+    free(data->ssid);
+    free(data->password);
+    free(data);
+}
+
+bool write_wifi_data(credential data)
+{
+    //Opening Non-Volatile Storage (NVS) handle
+    nvs_handle_t my_handle;
+    esp_err_t err;
+    err = nvs_open("storage", NVS_READWRITE, &my_handle);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    }
+    else
+    {
+        // Write
+        printf("Updating restart counter in NVS ... ");
+        err = nvs_set_str(my_handle, "credentialSsid", data.ssid);
+        if (err != ESP_OK)
+        {
+            ESP_LOGI("NVS", "Failed in writing ssid!\n");
+            return false;
+        }
+
+        err = nvs_set_str(my_handle, "credentialPass", data.password);
+        if (err != ESP_OK)
+        {
+            ESP_LOGI("NVS", "Failed in writing password!\n");
+            return false;
+        }
+        // Commit written value.
+        err = nvs_commit(my_handle);
+        if (err != ESP_OK)
+        {
+            ESP_LOGI("NVS", "Failed in commiting!\n");
+            return false;
+        }
+        // Close
+        nvs_close(my_handle);
+    }
+    return true;
+}
+
+//need to reset wifi
+void restart_module()
+{
+    esp_restart();
 }

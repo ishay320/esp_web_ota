@@ -14,9 +14,14 @@
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5
 static esp_ip4_addr_t ip;
 
-// TODO: 1.get ap from mem
+// TODO: 1.
 //       2.setup ap if fail
-//       3.print ip
+
+typedef struct
+{
+    char *ssid;
+    char *password;
+} credential;
 
 /**
  * @brief init the tcp/ip stack 
@@ -46,12 +51,14 @@ void print_ap_info(wifi_ap_record_t *ap_info, uint16_t ap_count);
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data);
 
-bool connect_to_sta(char *SSID, char *pass);
+bool connect_to_sta(credential data);
 
 /**
  * @brief Get the ip object
  * 
- * in order to print use printf("IPSTR", IP2STR(ip));
+ * in order to print use:  
+ *  esp_ip4_addr_t ip = get_ip();
+ *  printf(IPSTR, IP2STR(&ip));
  * @return esp_ip4_addr_t 
  */
 esp_ip4_addr_t get_ip();
@@ -68,3 +75,29 @@ void start_ap(wifi_config_t ap_config);
  * @param authmode 
  */
 void print_auth_mode(int authmode);
+
+/**
+ * @brief read the ssid and pasword from NVS
+ * !dont forget to free all after!
+ * @return credential* that hold the ssid and pass
+ * @return NULL if failed
+ */
+credential *read_wifi_data();
+
+/**
+ * @brief free the credential object from memory
+ * 
+ * @param data is the object to free
+ */
+void free_credential(credential *data);
+
+/**
+ * @brief write the ssid and password to NVS
+ * 
+ * @param data 
+ * @return true if secceded
+ * @return false if failed
+ */
+bool write_wifi_data(credential data);
+
+void restart_module();
