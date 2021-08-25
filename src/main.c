@@ -12,7 +12,12 @@ void app_main(void)
     credential data;
     data.ssid = "Bspot0856_2.4";
     data.password = "7C000856";
-    connect_to_sta(data);
+    bool ap = connect_to_sta(data);
+    if (!ap)
+    {
+        wifi_config_t ap_config;
+        start_ap(ap_config);
+    }
 
     write_wifi_data(data);
     credential *a;
@@ -33,7 +38,6 @@ void app_main(void)
 
 /**
  *  TODO:
- *      *if connection fail start AP
  *      *start web interface for inserting ssid and pass
  *      *ota
  * 
@@ -46,5 +50,6 @@ void app_main(void)
  *      *save the ssid and pass to memory
  *      *restart the module after input
  *      *ip getting
+ *      *if connection fail start AP
  * 
  */
