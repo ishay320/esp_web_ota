@@ -21,15 +21,6 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
-// TODO: 1.get ap from mem
-//       2.setup ap if fail
-//       3.print ip
-
-/**
- * @brief init the tcp/ip stack 
- * and free and init the NVS partition
- * 
- */
 void wifi_init()
 {
     // Initialize NVS - needed for WIFI
@@ -50,13 +41,6 @@ void wifi_init()
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 }
 
-/**
- * @brief scans wifi
- * set: wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
- * 
- * @param ap_info 
- * @param ap_count 
- */
 void wifi_scan(wifi_ap_record_t *ap_info, uint16_t *ap_count)
 {
     uint16_t number = DEFAULT_SCAN_LIST_SIZE; // list len
@@ -73,12 +57,6 @@ void wifi_scan(wifi_ap_record_t *ap_info, uint16_t *ap_count)
     ESP_ERROR_CHECK(esp_wifi_stop()); // close the wifi
 }
 
-/**
- * @brief print the list of ap
- * 
- * @param ap_info 
- * @param ap_count 
- */
 void print_ap_info(wifi_ap_record_t *ap_info, uint16_t ap_count)
 {
     for (size_t i = 0; i < ap_count; i++)
@@ -126,23 +104,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-// use printf("IPSTR", IP2STR(ip));
-esp_ip4_addr_t get_ip()
-{
-    return ip;
-}
-
 bool connect_to_sta(char *SSID, char *pass)
 {
     s_wifi_event_group = xEventGroupCreate();
     bool toReturn;
-    // ESP_ERROR_CHECK(esp_netif_init());
 
-    // ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
-
-    // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    // ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
@@ -209,10 +176,11 @@ bool connect_to_sta(char *SSID, char *pass)
     return toReturn;
 }
 
-/**
- * @brief create open softAP
- * TODO: get ssid and pass from outside
- */
+esp_ip4_addr_t get_ip()
+{
+    return ip;
+}
+
 void start_ap(wifi_config_t ap_config)
 {
     wifi_config_t wifi_config = {
@@ -230,11 +198,6 @@ void start_ap(wifi_config_t ap_config)
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-/**
- * @brief print the given auth mode
- * 
- * @param authmode 
- */
 void print_auth_mode(int authmode)
 {
     switch (authmode)
