@@ -26,45 +26,6 @@ static EventGroupHandle_t s_wifi_event_group;
 //       3.print ip
 
 /**
- * @brief print the given auth mode
- * 
- * @param authmode 
- */
-void print_auth_mode(int authmode)
-{
-    switch (authmode)
-    {
-    case WIFI_AUTH_OPEN:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_OPEN");
-        break;
-    case WIFI_AUTH_WEP:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WEP");
-        break;
-    case WIFI_AUTH_WPA_PSK:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA_PSK");
-        break;
-    case WIFI_AUTH_WPA2_PSK:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_PSK");
-        break;
-    case WIFI_AUTH_WPA_WPA2_PSK:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA_WPA2_PSK");
-        break;
-    case WIFI_AUTH_WPA2_ENTERPRISE:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_ENTERPRISE");
-        break;
-    case WIFI_AUTH_WPA3_PSK:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_PSK");
-        break;
-    case WIFI_AUTH_WPA2_WPA3_PSK:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_WPA3_PSK");
-        break;
-    default:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
-        break;
-    }
-}
-
-/**
  * @brief init the tcp/ip stack 
  * and free and init the NVS partition
  * 
@@ -108,6 +69,8 @@ void wifi_scan(wifi_ap_record_t *ap_info, uint16_t *ap_count)
     // get the data
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(ap_count));
+
+    ESP_ERROR_CHECK(esp_wifi_stop()); // close the wifi
 }
 
 /**
@@ -130,7 +93,7 @@ void print_ap_info(wifi_ap_record_t *ap_info, uint16_t ap_count)
         ESP_LOGI(TAG, "Channel \t\t%d\n", (ap_info + i)->primary);
     }
 }
-///////////////////////////////////////////////
+
 static int s_retry_num = 0;
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
@@ -157,15 +120,22 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        ip = event->ip_info.ip;
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
 
-void wifi_init_sta(char *SSID, char *pass)
+// use printf("IPSTR", IP2STR(ip));
+esp_ip4_addr_t get_ip()
+{
+    return ip;
+}
+
+bool connect_to_sta(char *SSID, char *pass)
 {
     s_wifi_event_group = xEventGroupCreate();
-
+    bool toReturn;
     // ESP_ERROR_CHECK(esp_netif_init());
 
     // ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -219,41 +189,31 @@ void wifi_init_sta(char *SSID, char *pass)
 
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
-    if (bits & WIFI_CONNECTED_BIT)
+    if (bits & WIFI_CONNECTED_BIT) //connected to ap
     {
-        ESP_LOGI(TAG, "connected to ap SSID: password:");
+        toReturn = true;
     }
     else if (bits & WIFI_FAIL_BIT) // TODO: start AP server here
     {
-        ESP_LOGI(TAG, "Failed to connect to SSID:, password:");
+        toReturn = false; //Failed to connect to SSID
     }
     else
     {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        toReturn = false; //UNEXPECTED EVENT
     }
 
     /* The event will not be processed after unregister */
     ESP_ERROR_CHECK(esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip));
     ESP_ERROR_CHECK(esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id));
     vEventGroupDelete(s_wifi_event_group);
-}
-/////////////////////////////////////////////
-bool connect_to_ap(wifi_config_t sta_config)
-{
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &sta_config));
-    ESP_ERROR_CHECK(esp_wifi_start()); // starts the wifi AP
-    // WIFI connection
-    ESP_ERROR_CHECK(esp_wifi_connect()); //TODO: add while loop that wait for connection
-
-    return true;
+    return toReturn;
 }
 
 /**
  * @brief create open softAP
  * TODO: get ssid and pass from outside
  */
-void start_ap()
+void start_ap(wifi_config_t ap_config)
 {
     wifi_config_t wifi_config = {
         .ap = {
@@ -268,4 +228,43 @@ void start_ap()
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+/**
+ * @brief print the given auth mode
+ * 
+ * @param authmode 
+ */
+void print_auth_mode(int authmode)
+{
+    switch (authmode)
+    {
+    case WIFI_AUTH_OPEN:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_OPEN");
+        break;
+    case WIFI_AUTH_WEP:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WEP");
+        break;
+    case WIFI_AUTH_WPA_PSK:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA_PSK");
+        break;
+    case WIFI_AUTH_WPA2_PSK:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_PSK");
+        break;
+    case WIFI_AUTH_WPA_WPA2_PSK:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA_WPA2_PSK");
+        break;
+    case WIFI_AUTH_WPA2_ENTERPRISE:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_ENTERPRISE");
+        break;
+    case WIFI_AUTH_WPA3_PSK:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_PSK");
+        break;
+    case WIFI_AUTH_WPA2_WPA3_PSK:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_WPA3_PSK");
+        break;
+    default:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
+        break;
+    }
 }
