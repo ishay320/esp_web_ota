@@ -12,7 +12,7 @@
 
 #define DEFAULT_SCAN_LIST_SIZE 15
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5
-static esp_ip4_addr_t ip;
+esp_ip4_addr_t ip;
 
 /**
  * @brief struct that holds the credential to the wifi network
@@ -47,10 +47,6 @@ void wifi_scan(wifi_ap_record_t *ap_info, uint16_t *ap_count);
  * @param ap_count 
  */
 void print_ap_info(wifi_ap_record_t *ap_info, uint16_t ap_count);
-
-// in use in connect_to_sta
-static void event_handler(void *arg, esp_event_base_t event_base,
-                          int32_t event_id, void *event_data);
 
 bool connect_to_sta(credential data);
 

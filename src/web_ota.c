@@ -21,6 +21,10 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
+// in use in connect_to_sta
+static void event_handler(void *arg, esp_event_base_t event_base,
+                          int32_t event_id, void *event_data);
+
 void wifi_init()
 {
     // Initialize NVS - needed for WIFI
