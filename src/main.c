@@ -27,29 +27,23 @@ void app_main(void)
     printf(IPSTR, IP2STR(&ip));
     printf("\n");
 
-    //TODO: replace with reading from mem
-    // wifi_config_t sta_config = {
-    //     .sta = {.ssid = "Bspot0856_2.4", .password = "7C000856"},
-    // };
-    //connect_to_ap(sta_config);
-    //start_ap();
-    // ESP_LOGI(TAG, "*********** connected ********************");
 }
 
 /**
  *  TODO:
  *      *start web interface for inserting ssid and pass
  *      *ota
+ *      *remove last credential
  * 
  * DONE:
  *      *connect to sta with pass and ssid
  *      *join all the init of the wifi
- *      *scanning the wifi (have bugs- work only when single)
+ *      *scanning the wifi
  *      *print the scanned data
  *      *start ap - need to check more
  *      *save the ssid and pass to memory
  *      *restart the module after input
- *      *ip getting
- *      *if connection fail start AP
+ *      *ip getting for showing
+ *      *if connection fail start AP (sta connection returns bool)
  * 
  */

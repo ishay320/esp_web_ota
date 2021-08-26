@@ -92,7 +92,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGI(TAG, "connect to the AP fail");
+        ESP_LOGE(TAG, "connect to the AP fail");
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
@@ -244,7 +244,7 @@ credential *read_wifi_data()
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK)
     {
-        ESP_LOGI("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ESP_LOGE("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     }
     else
     {
@@ -265,7 +265,7 @@ credential *read_wifi_data()
             credentialData->password = tmpStrPass;
             break;
         case ESP_ERR_NVS_NOT_FOUND:
-            ESP_LOGI("NVS", "The value is not initialized yet!\n");
+            ESP_LOGE("NVS", "The value is not initialized yet!\n");
             free(tmpStrSsid);
             free(tmpStrPass);
             free(tmpStrSsid);
@@ -273,7 +273,7 @@ credential *read_wifi_data()
             return NULL;
             break;
         default:
-            ESP_LOGI("NVS", "Error (%s) reading!(%d)\n", esp_err_to_name(err), required_size);
+            ESP_LOGE("NVS", "Error (%s) reading!(%d)\n", esp_err_to_name(err), required_size);
             free(tmpStrSsid);
             free(tmpStrPass);
             free(tmpStrSsid);
@@ -302,30 +302,29 @@ bool write_wifi_data(credential data)
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK)
     {
-        ESP_LOGI("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ESP_LOGE("NVS", "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     }
     else
     {
         // Write
-        printf("Updating restart counter in NVS ... ");
         err = nvs_set_str(my_handle, "credentialSsid", data.ssid);
         if (err != ESP_OK)
         {
-            ESP_LOGI("NVS", "Failed in writing ssid!\n");
+            ESP_LOGE("NVS", "Failed in writing ssid!\n");
             return false;
         }
 
         err = nvs_set_str(my_handle, "credentialPass", data.password);
         if (err != ESP_OK)
         {
-            ESP_LOGI("NVS", "Failed in writing password!\n");
+            ESP_LOGE("NVS", "Failed in writing password!\n");
             return false;
         }
         // Commit written value.
         err = nvs_commit(my_handle);
         if (err != ESP_OK)
         {
-            ESP_LOGI("NVS", "Failed in commiting!\n");
+            ESP_LOGE("NVS", "Failed in commiting!\n");
             return false;
         }
         // Close

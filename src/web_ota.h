@@ -1,11 +1,11 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "nvs_flash.h"
 #include <string.h>
-#include "esp_system.h"
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -14,9 +14,10 @@
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5
 static esp_ip4_addr_t ip;
 
-// TODO: 1.
-//       2.setup ap if fail
-
+/**
+ * @brief struct that holds the credential to the wifi network
+ * 
+ */
 typedef struct
 {
     char *ssid;
