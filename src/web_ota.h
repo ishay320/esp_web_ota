@@ -10,6 +10,8 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+#include "esp_http_server.h"
+
 #define DEFAULT_SCAN_LIST_SIZE 15
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5
 esp_ip4_addr_t ip;
@@ -18,11 +20,11 @@ esp_ip4_addr_t ip;
  * @brief struct that holds the credential to the wifi network
  * 
  */
-typedef struct
+typedef struct credential
 {
     char *ssid;
     char *password;
-} credential;
+} credential_t;
 
 /**
  * @brief init the tcp/ip stack 
@@ -48,7 +50,7 @@ void wifi_scan(wifi_ap_record_t *ap_info, uint16_t *ap_count);
  */
 void print_ap_info(wifi_ap_record_t *ap_info, uint16_t ap_count);
 
-bool connect_to_sta(credential data);
+bool connect_to_sta(credential_t data);
 
 /**
  * @brief Get the ip object
@@ -76,17 +78,17 @@ void print_auth_mode(int authmode);
 /**
  * @brief read the ssid and pasword from NVS
  * !dont forget to free all after!
- * @return credential* that hold the ssid and pass
+ * @return credential_t* that hold the ssid and pass
  * @return NULL if failed
  */
-credential *read_wifi_data();
+credential_t *read_wifi_data();
 
 /**
  * @brief free the credential object from memory
  * 
  * @param data is the object to free
  */
-void free_credential(credential *data);
+void free_credential(credential_t *data);
 
 /**
  * @brief write the ssid and password to NVS
@@ -95,6 +97,10 @@ void free_credential(credential *data);
  * @return true if secceded
  * @return false if failed
  */
-bool write_wifi_data(credential data);
+bool write_wifi_data(credential_t data);
 
 void restart_module();
+
+httpd_handle_t start_webserver(void);
+void stop_webserver(httpd_handle_t server);
+char *get_data_ptr(char *data, const int dataPos, int *keySize, int *valueSize);
